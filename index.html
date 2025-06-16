@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>log lang</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      background-color: black;
+      height: 100vh;
+      width: auto;
+      margin: 0;
+    }
+    #codeArea{
+      height: 40vh;
+      width: 30vw;
+      outline: none;
+      resize: none;
+      border: 1px solid;
+      background-color: rgba(30, 30, 30, 0.9);
+      border-color: rgba(95, 95, 95, 0.8);
+      color: rgb(117, 255, 117);
+      margin: 10px;
+    }
+    #output{
+      align-self: flex-end;
+      height: 40vh;
+      width: 30vw;
+      outline: none;
+      resize: none;
+      border: 1px solid;
+      background-color: rgba(30, 30, 30, 0.9);
+      border-color: rgba(95, 95, 95, 0.8);
+      color: rgb(200, 200, 200);
+      margin: 10px;
+    }
+    textarea{
+      font-size: 20px;
+      font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    }
+    .buttons{
+      display: flex;
+      width: 30%;
+      margin-left: 10px;
+      text-align: center;
+    }
+    #runCode{
+      background-color: rgb(117, 255, 117);
+      height: 50px;
+      width: 25%;
+    }
+    button{
+      background-color: rgb(226, 228, 226);
+      border-color: rgb(180, 180, 180);
+      border-radius: 30px;
+      height: 50px;
+      width: 25%;
+      margin: 10px;
+      font-size: 17px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <textarea name="codeArea" id="codeArea" placeholder='write("hello world!")'></textarea>
+    <textarea name="output" id="output" placeholder="output"></textarea>
+    <div class="buttons">
+      <button id="runCode" onclick="runCode()">Run</button>
+      <button id="documentation">Documentation</button>
+      <button id="saveFile">Save</button>
+      <button id="loadFile">Load</button>
+    </div>
+  </div>
+
+  <script src="run.js"></script>
+  <script src="tools.js"></script>
+</body>
+</html>
