@@ -14,6 +14,7 @@ class Parser{
     'divide': (val1, val2) => (parseInt(val1))/(parseInt(val2)),
     'sqrt': (val) => Math.sqrt(val),
     'pi': () => Math.PI,
+    'var': (name, value) => this.variables[name] = value,
   }
 
   functions = {};
@@ -27,6 +28,8 @@ class Parser{
   parse(){
     while (this.pos < this.tokens.length){
       this.result += String(this.parseToken());
+      console.log(`vars: ${JSON.stringify(this.variables)}`);
+      console.log(`funcs: ${JSON.stringify(this.functions)}`);
       this.pos++;
     }
   }
@@ -34,5 +37,9 @@ class Parser{
   parseToken(){
     const token = this.tokens[this.pos];
     
+  }
+
+  handleFunctions(){
+
   }
 }

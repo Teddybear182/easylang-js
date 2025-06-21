@@ -3,41 +3,57 @@ export {Lexer};
 class Lexer{
   constructor(code){
     this.code = code;
-    this.tokens = [];
-    this.currChar = this.code[this.pos];
     this.regex = {
       number: /^\d+(\.\d+)?\b/,
       string: /^"([^"]*)"/,
-      identifier: /^[a-zA-Z0-9_]+/,
+      identifier: /^[a-zA-Z_]+([0-9a-zA-Z_]+)?/,
       parens: /^[()]/,
-      whitespace: /\s/
+      operator: /^[+*/-]/,
+      equals: /^=/,
+      space: /^( )/,
+      multispaces: /[\s\t]{2,}/,
+      tab: /\n+/
     }
   }
 
   tokenize(){
+    let code = this.code;
+    let tokens = [];
+    let regex = this.regex;
     let i=0;
-    while(this.code.length !== 0){
+    while(code.length !== 0){
       let match;
-      this.code = this.code.replace(this.regex.whitespace, '');
-      if (match = this.code.match(this.regex.number)){
-        this.tokens.push({type: 'number', value: parseInt(match[0])});
+      code = code.replace(regex.multispaces, ' ');
+      code = code.replace(regex.tab, ' ');
+      if (match = code.match(regex.number)){
+        tokens.push({type: 'number', value: parseInt(match[0])});
       }
-      else if (match = this.code.match(this.regex.string)){
-        this.tokens.push({type: 'string', value: match[1]});
+      else if (match = code.match(regex.string)){
+        tokens.push({type: 'string', value: match[1]});
       }
-      else if (match = this.code.match(this.regex.identifier)){
-        this.tokens.push({type: 'identifier', value: match[0]});
+      else if (match = code.match(regex.identifier)){
+        tokens.push({type: 'identifier', value: match[0]});
       }
-      else if (match = this.code.match(this.regex.parens)){
-        this.tokens.push({type: 'parens', value: match[0]});
+      else if (match = code.match(regex.parens)){
+        tokens.push({type: 'parens', value: match[0]});
+      }
+      else if (match = code.match(regex.operator)){
+        tokens.push({type: 'operator', value: match[0]});
+      }
+      else if (match = code.match(regex.equals)){
+        tokens.push({type: 'equals', value: match[0]});
+      }
+      else if (match = code.match(regex.space)){
+        code = code.slice(1);
+        continue;
       }
       else {
-        throw new SyntaxError(`Something went wrong: ${this.code}`);
+        throw new Error(`Something went wrong: ${code[0]}`);
       }
-      console.log(`added token -> type: ${this.tokens[i].type}, value: ${this.tokens[i].value}`);
+      console.log(`added token -> type: ${tokens[i].type}, value: ${tokens[i].value}`);
       i++;
-      this.code = this.code.slice(match[0].length);
+      code = code.slice(match[0].length);
     }
-    return this.tokens;
+    return tokens;
   }
 }
