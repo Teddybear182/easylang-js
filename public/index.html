@@ -45,7 +45,7 @@
       margin-left: 10px;
       text-align: center;
     }
-    #runCode{
+    #runButton{
       background-color: rgb(117, 255, 117);
       height: 50px;
       width: 25%;
@@ -66,15 +66,12 @@
     <textarea name="codeArea" id="codeArea" placeholder='write("hello world!")'></textarea>
     <textarea name="output" id="output" placeholder="output"></textarea>
     <div class="buttons">
-      <button id="runCode" onclick="runCode()">Run</button>
+      <button id="runButton">Run</button>
       <button id="documentation">Documentation</button>
       <button id="saveFile">Save</button>
       <button id="loadFile">Load</button>
     </div>
   </div>
-
-  <script type="module" src="run.js"></script>
-  <script type="module" src="lexer.js"></script>
-  <script type="module" src="parser.js"></script>
+  <script type="module" src="../src/index.js"></script>
 </body>
 </html>

@@ -1,16 +1,20 @@
-import { Lexer } from "./lexer.js";
+import { evaluate } from "./interpreter.js";
 import { Parser } from "./parser.js";
+
 
 let codeArea = document.getElementById("codeArea");
 let output = document.getElementById("output");
+let runButton = document.getElementById("runButton");
 
+runButton.addEventListener('click', runCode);
+
+output.value = 'EasyLang v0.1';
 function runCode(){
   let code = codeArea.value;
-  let lexer = new Lexer(code);
-  let tokens = lexer.tokenize();
-  let parser = new Parser(tokens);
-  output.value = parser.result;
-  console.log(parser.result);
+  let ast = new Parser().generateAST(code);
+  let out = evaluate(ast);
+  output.value += `\n>${out.value}`;
+  console.log(out)
 }
 
 codeArea.addEventListener('keydown', function(e) {
@@ -22,5 +26,3 @@ codeArea.addEventListener('keydown', function(e) {
     this.selectionStart = this.selectionEnd = start + 1;
   }
 })
-
-window.runCode = runCode;
