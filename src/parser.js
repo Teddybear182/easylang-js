@@ -1,14 +1,46 @@
 import { Lexer } from './lexer.js';
-export { Parser };
+import { makeNull, makeNumber } from "./utils.js";
 
-class Parser{
+export class Parser{
   tokens = [];
+  
+  next(){
+    return this.tokens.shift();
+  }
+
+  check(){
+    return this.tokens[0];
+  }
+
+  checkType(){
+    return this.check()?.type;
+  }
+
+  checkValue(){
+    return this.check()?.value;
+  }
+
+  expect(type, value, error){
+    const tkn = this.next();
+    if (!tkn || tkn.type != type || tkn.value != value){
+      throw new Error(`Parser error:\n ${error}, ${JSON.stringify(tkn)}, Expecting -> {type: ${type} , value: ${value} }`);
+    }
+    return tkn;
+  }
+
+  checkIf(value){
+    if (this.checkValue() === value){
+      this.next();
+      return true;
+    }
+    return false;
+  }
 
   generateAST(sourceCode){
     this.tokens = new Lexer().tokenize(sourceCode)
     let program = {type: 'Program', body: []};
 
-    while (this.tokens[0].type != 'EOF'){
+    while (this.checkType() != 'EOF'){
       let statement = this.parseStatement();
       program.body.push(statement);
     }
@@ -17,18 +49,30 @@ class Parser{
     return program;
   }
 
-  expectToken(type, value=null, error){
-    const tkn = this.tokens.shift();
-    if (!tkn || tkn.type != type || tkn.value != value){
-      throw new Error(`Parser error:\n ${error}, ${tkn}, Expecting -> type: ${type} value: ${value}`);
-    }
-    
-    return tkn;
-  }
-
   parseStatement(){
+    switch(this.checkValue()){
+      case 'var':
+        return this.parseVarDec();
+    }
     return this.parseExpression();
   }
+
+  parseVarDec(){
+    this.next();
+    if(this.checkType() != 'identifier'){
+      throw new Error(`Expected name of the variable instead of ${this.check()}`);
+    }
+    let varName = this.next().value;
+    let initVal = makeNull();
+    if(this.checkIf('=')){
+      initVal = this.parseExpression();
+    }
+    else{
+      this.expect('punctuation', ';', 'Expected semicolon at the end of expression');
+    }
+    return {type: 'varDec', varName, initVal};
+  }
+
 
   parseExpression(){
     return this.parseAddExpr();
@@ -36,42 +80,48 @@ class Parser{
 
   parseAddExpr(){
     let left = this.parseMultExpr();
-    while(this.tokens[0].value == '+' || this.tokens[0].value == '-'){
-      const operator = this.tokens.shift().value;
+    while(this.checkValue() == '+' || this.checkValue() == '-'){
+      const operator = this.next().value;
       const right = this.parseMultExpr();
       left = {type: 'BinaryExpr', left, right, operator };
     }
-
+    this.expect('punctuation', ';', 'Expected semicolon at the end of expression');
     return left;
   }
 
+  /*  5+2*4 --> [5, [ 2, 4, *], +] --- something like that */
   parseMultExpr(){
     let left = this.parsePrimExpr();
-    while(this.tokens[0].value == '*' || this.tokens[0].value == '/'){
-      const operator = this.tokens.shift().value;
+    while(this.checkValue() == '*' || this.checkValue() == '/' || this.checkValue() == '%'){
+      const operator = this.next().value;
       const right = this.parsePrimExpr();
       left = {type: 'BinaryExpr', left, right, operator };
     }
-
     return left;
   }
 
   parsePrimExpr(){
-    const token = this.tokens[0];
-    if (token.type === 'identifier'){
-      return {type: 'identifier', value: this.tokens.shift().value};
+    const token = this.check();
+
+    if (token.type == 'identifier'){
+      const tkn = this.next();
+      return {type: 'identifier', value: tkn.value};
     }
-    else if (token.type === 'number'){ 
-      return {type: 'number', value: this.tokens.shift().value};
+
+    else if (token.type == 'number'){
+      const tkn = this.next();
+      return makeNumber(tkn.value);
     }
-    else if (token.type === 'parens' && token.value === '('){
-      this.tokens.shift();
+
+    else if (token.type == 'parens' && token.value == '('){
+      this.next();
       let value = this.parseExpression();
-      this.expectToken('parens', ')', 'Expected closed parenthesis');
+      this.expect('parens', ')', 'Expected closed parenthesis');
       return value;
     }
+
     else {
-      throw new Error(`Unexpected token: ${token}`);
+      throw new Error(`Unexpected token: ${JSON.stringify(token)}`);
     }
   }
 }

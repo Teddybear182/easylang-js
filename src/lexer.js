@@ -1,25 +1,30 @@
-export { Lexer };
+const Keywords = [
+  'var', 'if', 'else', 'while', 'for', 'task', 'return', 'true', 'false'
+];
 
-class Lexer{
-  regex = {
-      number: /^\d+(\.\d+)?\b/,
-      string: /^"([^"]*)"/,
-      identifier: /^[a-zA-Z_]+([0-9a-zA-Z_]+)?/,
+const Operators = [
+  '\\+', '\\-', '/', '\\*', '%', '=', '>=', '<=', '!=', '\\|\\|', '&&'
+];
 
-      parens: /^[()]/,
-      operator: /^[+*/-]/,
-      equals: /^=/,
-      space: /^( )/,
-      multispaces: /[\s\t]{2,}/,
-      nextline: /\n+/,
+const regex = {
+  number: /^\d+(\.\d+)?\b/,
+  string: /^"([^"]*)"/,
+  identifier: /^[a-zA-Z_]+([0-9a-zA-Z_]+)?/,
 
-      varDec: /^(var)\b|^(let)\b/
-    };
+  parens: /^[()]/,
+  operators: new RegExp(`^(${Operators.join('|')})`),
+  keywords: new RegExp(`^(${Keywords.join('|')})`),
+  punctuation: /^[{}();:,.]/,
 
+  space: /^( )/,
+  multispaces: /[\s\t]{2,}/,
+  nextline: /\n+/,
+};
+
+export class Lexer{
   tokenize(sourceCode){
     let code = sourceCode;
     let tokens = [];
-    let regex = this.regex;
     let i=0;
     while(code.length !== 0){
       let match;
@@ -28,8 +33,11 @@ class Lexer{
       if (match = code.match(regex.number)){
         tokens.push({type: 'number', value: parseFloat(match[0])});
       }
-      else if (match = code.match(regex.varDec)){
-        tokens.push({type: 'varDec', value: match[0]});
+      else if (match = code.match(regex.keywords)){
+        tokens.push({type: 'keyword', value: match[0]});
+      }
+      else if (match = code.match(regex.punctuation)){
+        tokens.push({type: 'punctuation', value: match[0]});
       }
       else if (match = code.match(regex.string)){
         tokens.push({type: 'string', value: match[1]});
@@ -40,11 +48,8 @@ class Lexer{
       else if (match = code.match(regex.parens)){
         tokens.push({type: 'parens', value: match[0]});
       }
-      else if (match = code.match(regex.operator)){
+      else if (match = code.match(regex.operators)){
         tokens.push({type: 'operator', value: match[0]});
-      }
-      else if (match = code.match(regex.equals)){
-        tokens.push({type: 'equals', value: match[0]});
       }
       else if (match = code.match(regex.space)){
         code = code.slice(1);
@@ -58,7 +63,7 @@ class Lexer{
       i++;
       code = code.slice(match[0].length);
     }
-    console.log(tokens);
+    console.log(`tokens: ${JSON.stringify(tokens)}`);
     tokens.push({type: 'EOF', value: 'EndOfFile'});
     return tokens;
   }
