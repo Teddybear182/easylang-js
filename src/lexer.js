@@ -1,5 +1,5 @@
 const Keywords = [
-  'var', 'if', 'else', 'while', 'for', 'task', 'return', 'true', 'false'
+  'var', 'const', 'if', 'else', 'while', 'for', 'task', 'return', 'true', 'false'
 ];
 
 const Operators = [
@@ -14,7 +14,7 @@ const regex = {
   parens: /^[()]/,
   operators: new RegExp(`^(${Operators.join('|')})`),
   keywords: new RegExp(`^(${Keywords.join('|')})`),
-  punctuation: /^[{}();:,.]/,
+  punctuation: /^[{};:,.]/,
 
   space: /^( )/,
   multispaces: /[\s\t]{2,}/,

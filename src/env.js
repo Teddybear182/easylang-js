@@ -1,8 +1,9 @@
-import { makeNull } from "./utils.js";
+import { makeNull, makeNumber } from "./utils.js";
 
 export class Environment{
   parent;
   variables = new Map();
+  constants = new Set();
 
   constructor(parent){
     this.parent = parent;
@@ -15,17 +16,26 @@ export class Environment{
     return this.variables.has(varName);
   }
 
-  declare(varName, value){
+  declare(varName, value, isConstant){
+    console.log(this.variables);
+    
     if (this.isDeclared(varName)){
       throw new Error(`Can't declare variable "${varName}", it's already initialized`);
     }
 
+    if(isConstant){
+      this.constants.add(varName)
+    }
     this.variables.set(varName, value);
+
     return value;
   }
 
   assign(varName, value){
     const environment = this.locateVariable(varName);
+    if(this.constants.has(varName)){
+      throw new Error(`Cannot assign new value to the constant`);
+    }
     environment.variables.set(varName, value);
     return value;
   }
@@ -46,4 +56,9 @@ export class Environment{
     let environment = this.locateVariable(varName);
     return environment.variables.get(varName);
   }
+}
+
+export function configScope(scope){
+  scope.declare("Pi", makeNumber(Math.PI));
+  scope.declare("null", makeNull());
 }

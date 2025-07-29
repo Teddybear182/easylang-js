@@ -16,6 +16,15 @@ export function evaluate(statement, env){
   else if(statement.type == 'BinaryExpr'){
     return evaluateBinEx(statement, env);
   }
+  else if(statement.type == 'UnaryExpr'){
+    return evaluateUnaryEx(statement, env);
+  }
+  else if(statement.type == 'Assignment'){
+    return evaluateAssignment(statement, env);
+  }
+  else if(statement.type == 'ObjectExpr'){
+    return evaluateObjectExpr(statement, env);
+  }
   else if(statement.type == 'Program'){
     return evaluateProgram(statement, env);
   }
@@ -32,31 +41,51 @@ function evaluateProgram(program, env){
   return evaluated;
 }
 
+function evaluateVarDeclaration(varDec, env){
+  let value;
+  value = evaluate(varDec.initVal, env);
+  let name = varDec.varName;
+  return env.declare(name, value, varDec.isConstant);
+}
+
+function evaluateAssignment(assignment, env){
+  let varName = assignment.left;
+  let right = evaluate(assignment.right, env);
+  return env.assign(varName, right);
+}
+
+function evaluateObjectExpr(object, env){
+  const properties = new Map();
+  let result = {type: 'object', properties};
+
+  for(let prop of object.properties){
+    let value = prop.value;
+    let name = prop.key;
+    if(value != undefined){
+      value = evaluate(value, env);
+    }
+    else{
+      value = env.getValue(name);
+    }
+    properties.set(name, value);
+  }
+
+  return result;
+}
+
 function evaluateIdentifier(id, env){
   const value = env.getValue(String(id.value));
   return value;
 }
 
-function evaluateVarDeclaration(varDec, env){
-  let value;
-  value = evaluate(varDec.initVal, env);
-  let name = varDec.varName;
-  return env.declare(name, value);
-}
+const UnaryOperations = {
+  "-": a => -a,
+  "not": (a) => Number(!Boolean(a)),
+};
 
-function evaluateBinEx(BinOp, env){
-  let lhs = evaluate(BinOp.left, env);
-  let rhs = evaluate(BinOp.right, env);
-  if (lhs.type == 'number' && rhs.type == 'number'){
-    return evaluateNumBinEx(lhs, rhs, BinOp.operator)
-  }
-  else if (lhs.type == 'identifier' || rhs.type == 'identifier'){
-    lhs = evaluateIdentifier(lhs, env);
-    lhs = evaluateIdentifier(rhs, env);
-    console.log(lhs, rhs);
-    return evaluateNumBinEx(lhs, rhs, BinOp.operator);
-  }
-  return makeNull();
+function evaluateUnaryEx(UnaryOp, env){
+  const expr = evaluate(UnaryOp.expression, env)
+  return makeNumber(UnaryOperations[UnaryOp.operator](expr.value));
 }
 
 const BinaryOperations = {
@@ -67,6 +96,14 @@ const BinaryOperations = {
   "%": (a,b) => a%b,
 };
 
+function evaluateBinEx(BinOp, env){
+  let lhs = evaluate(BinOp.left, env);
+  let rhs = evaluate(BinOp.right, env);
+  if (lhs.type == 'number' && rhs.type == 'number'){
+    return evaluateNumBinEx(lhs, rhs, BinOp.operator);
+  }
+  return makeNull();
+}
 
 function evaluateNumBinEx(lhs, rhs, operator){
   let left = parseFloat(lhs.value);

@@ -52,13 +52,19 @@ export class Parser{
   parseStatement(){
     switch(this.checkValue()){
       case 'var':
+      case 'const':
         return this.parseVarDec();
+      case 'task':
+        return this.parseFunction();
     }
     return this.parseExpression();
   }
 
   parseVarDec(){
-    this.next();
+    let isConstant = false;
+    if(this.next().value == 'const'){
+      isConstant = true;
+    }
     if(this.checkType() != 'identifier'){
       throw new Error(`Expected name of the variable instead of ${this.check()}`);
     }
@@ -67,16 +73,121 @@ export class Parser{
     if(this.checkIf('=')){
       initVal = this.parseExpression();
     }
-    else{
-      this.expect('punctuation', ';', 'Expected semicolon at the end of expression');
-    }
-    return {type: 'varDec', varName, initVal};
+    return {type: 'varDec', varName, initVal, isConstant};
   }
 
+  parseFunction(){
+    this.next();
+    if(this.checkType() != 'identifier'){
+      throw new Error(`Expected name of the function instead of ${this.check()}`);
+    }
+    let funcName = this.next().value;
+    let args = this.parseArgs();
+    let params = [];
+
+    for(const arg of args){
+      if(arg.type != 'identifier'){
+        throw new Error(`Expected parameters to be of type identifier inside a function declaration`);
+      }
+      params.push(arg.value);
+    }
+
+    this.expect('punctuation', '{', 'Expected function body after declaration');
+    let body = [];
+
+    while(this.checkType()!='EOF' && this.checkValue()!='}'){
+      body.push(this.parseStatement());
+    }
+
+    this.expect('punctuation', '}', 'Expected closing brace after function body');
+
+    const func = {
+      type: 'FunctionDec',
+      funcName,
+      parameters: params,
+      body
+    }
+
+    return func;
+  }
+
+
+
+  parseArgs(){
+    this.expect('parens', '(', 'Expected opened parenthesis');
+    let result;
+    if(this.checkValue() == ')'){
+      result = [];
+    }
+    else{
+      result = this.parseArgsList();
+    }
+    this.expect('parens', ')', 'Expected closed parenthesis');
+    return result;
+  }
+
+  parseArgsList(){
+    let args = [this.parseExpression()];
+    while(this.checkValue() == ','){
+      this.next();
+      args.push(this.parseExpression());
+    }
+    return args;
+  }
 
   parseExpression(){
-    return this.parseAddExpr();
+    let result = this.parseObjectExpr();
+
+    if(this.checkIf('=')){ //check for assign expression
+      if(result.type != 'identifier'){
+        throw new Error(`Expected an identifier in assignment instead of ${result.type}`);
+      }
+      let right = this.parseExpression();
+      return result = {
+        type: 'Assignment',
+        left: result.value,
+        right
+      };
+    }
+
+    return result;
   }
+
+  //{a:10, b:5}
+  parseObjectExpr(){
+    if(this.checkValue() != '{'){
+      return this.parseAddExpr();
+    }
+    this.next();
+    const properties = [];
+
+    while(this.checkType() != 'EOF' && this.checkValue() != '}'){
+
+      if(this.checkType()!='identifier'){
+        throw new Error(`Expected identifier as a key instead of ${JSON.stringify(this.check())}`);
+      }
+      const key = this.next().value;
+
+      if(this.checkIf(',')){
+        properties.push({type: 'Property', key});
+      }
+      else if(this.checkValue()=='}'){
+        properties.push({type: 'Property', key});
+      }
+
+      else if(this.checkIf(':')){
+        const value = this.parseExpression();
+        properties.push({type: 'Property', key, value})
+        if(this.checkValue()!='}'){
+          this.expect('punctuation', ',', 'Expected comma after defining property');
+        }
+      }
+    }
+
+    this.expect('punctuation', '}', 'Expected closed bracket after defining object');
+    return {type: 'ObjectExpr', properties};
+  }
+
 
   parseAddExpr(){
     let left = this.parseMultExpr();
@@ -85,7 +196,6 @@ export class Parser{
       const right = this.parseMultExpr();
       left = {type: 'BinaryExpr', left, right, operator };
     }
-    this.expect('punctuation', ';', 'Expected semicolon at the end of expression');
     return left;
   }
 
@@ -118,6 +228,10 @@ export class Parser{
       let value = this.parseExpression();
       this.expect('parens', ')', 'Expected closed parenthesis');
       return value;
+    }
+
+    else if (this.checkIf('-')){
+      return {type: 'UnaryExpr', operator: '-', expression: this.parsePrimExpr()};
     }
 
     else {
