@@ -1,8 +1,11 @@
-import { makeNull, makeNumber } from "./utils.js";
+import { makeNull, makeNumber, makeString, makeIdentifier } from "./utils.js";
 
 export function evaluate(statement, env){
   if(statement.type == 'number'){
     return makeNumber(statement.value);
+  }
+  if(statement.type == 'string'){
+    return makeString(statement.value);
   }
   else if(statement.type == 'identifier'){
     return evaluateIdentifier(statement, env);
@@ -21,6 +24,9 @@ export function evaluate(statement, env){
   }
   else if(statement.type == 'Assignment'){
     return evaluateAssignment(statement, env);
+  }
+  else if(statement.type == 'ArrayExpr'){
+    return evaluateArrayExpr(statement, env);
   }
   else if(statement.type == 'ObjectExpr'){
     return evaluateObjectExpr(statement, env);
@@ -56,7 +62,7 @@ function evaluateAssignment(assignment, env){
 
 function evaluateObjectExpr(object, env){
   const properties = new Map();
-  let result = {type: 'object', properties};
+  let obj = {type: 'object', properties};
 
   for(let prop of object.properties){
     let value = prop.value;
@@ -70,7 +76,18 @@ function evaluateObjectExpr(object, env){
     properties.set(name, value);
   }
 
-  return result;
+  return obj;
+}
+
+function evaluateArrayExpr(array, env){
+  const properties = [];
+  let arr = {type: 'array', properties};
+
+  for(let element of array.properties){
+    const value = evaluate(element.value, env);
+    properties.push(value);
+  }
+  return arr;
 }
 
 function evaluateIdentifier(id, env){

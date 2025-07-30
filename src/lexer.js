@@ -14,7 +14,7 @@ const regex = {
   parens: /^[()]/,
   operators: new RegExp(`^(${Operators.join('|')})`),
   keywords: new RegExp(`^(${Keywords.join('|')})`),
-  punctuation: /^[{};:,.]/,
+  punctuation: /^[{}[\];:,.]/,
 
   space: /^( )/,
   multispaces: /[\s\t]{2,}/,

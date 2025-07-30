@@ -1,5 +1,5 @@
 import { Lexer } from './lexer.js';
-import { makeNull, makeNumber } from "./utils.js";
+import { makeNull, makeNumber, makeString, makeIdentifier } from "./utils.js";
 
 export class Parser{
   tokens = [];
@@ -73,6 +73,8 @@ export class Parser{
     if(this.checkIf('=')){
       initVal = this.parseExpression();
     }
+
+    this.expect('punctuation', ';', 'Expected semicolon after initializing variable');
     return {type: 'varDec', varName, initVal, isConstant};
   }
 
@@ -111,8 +113,6 @@ export class Parser{
     return func;
   }
 
-
-
   parseArgs(){
     this.expect('parens', '(', 'Expected opened parenthesis');
     let result;
@@ -136,7 +136,7 @@ export class Parser{
   }
 
   parseExpression(){
-    let result = this.parseObjectExpr();
+    let result = this.parseArrayExpr();
 
     if(this.checkIf('=')){ //check for assign expression
       if(result.type != 'identifier'){
@@ -151,6 +151,31 @@ export class Parser{
     }
 
     return result;
+  }
+  
+  parseArrayExpr(){
+    if(this.checkValue() != '['){
+      return this.parseObjectExpr();
+    }
+    this.next();
+    const properties = [];
+
+    while(this.checkType()!='EOF' && this.checkValue()!=']'){
+
+      if(this.checkType()!='identifier' && this.checkType()!='number' && this.checkType()!='string'){
+        throw new Error(`Expected valid token type in array expression instead of ${this.checkType()}`);
+      }
+      const value = this.parseExpression();
+
+      if(this.checkIf(',')){
+        properties.push({type: 'Element', value});
+      }
+      else if(this.checkValue()==']'){
+        properties.push({type: 'Element', value});
+      }
+    }
+    this.expect('punctuation', ']', 'Expected closed brace after defining array');
+    return {type: 'ArrayExpr', properties};
   }
 
   //{a:10, b:5}
@@ -188,7 +213,6 @@ export class Parser{
     return {type: 'ObjectExpr', properties};
   }
 
-
   parseAddExpr(){
     let left = this.parseMultExpr();
     while(this.checkValue() == '+' || this.checkValue() == '-'){
@@ -215,7 +239,12 @@ export class Parser{
 
     if (token.type == 'identifier'){
       const tkn = this.next();
-      return {type: 'identifier', value: tkn.value};
+      return makeIdentifier(tkn.value);
+    }
+
+    if (token.type == 'string'){
+      const tkn = this.next();
+      return makeString(tkn.value);
     }
 
     else if (token.type == 'number'){

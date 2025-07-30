@@ -1,0 +1,2 @@
+const x = 5;
+const arr = ["fooBar", x, 3];

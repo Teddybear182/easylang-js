@@ -9,3 +9,7 @@ export function makeNumber(number=0){
 export function makeIdentifier(id){
   return {type: 'identifier', value: id};
 }
+
+export function makeString(str){
+  return {type: 'string', value: str};
+}
