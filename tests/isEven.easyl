@@ -1,0 +1,10 @@
+task isEven(a){
+	if(a%2==0){
+		write("true")
+	}
+	else{
+		write("false")
+	}
+}
+
+isEven(7)

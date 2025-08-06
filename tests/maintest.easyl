@@ -1,0 +1,13 @@
+task main(){
+  const x = 6;
+  task addNumbers(a,b){
+    write(a+b)
+  }
+  task substractNumbers(a,b){
+    write(a-b)
+  }
+}
+
+const Main = main();
+
+Main.substractNumbers(5,8)

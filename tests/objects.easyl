@@ -3,3 +3,4 @@ const object = {
   b:{x:5},
   c:56,
 };
+write(object["a"])

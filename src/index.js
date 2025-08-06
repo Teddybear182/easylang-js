@@ -14,7 +14,7 @@ let fileInput = document.getElementById("fileInput");
 
 runButton.addEventListener('click', runCode);
 
-output.value = 'EasyLang v0.3';
+output.value = 'EasyLang v1.4';
 
 function runCode(){
   try{
@@ -22,16 +22,25 @@ function runCode(){
     let ast = new Parser().generateAST(code);
     let globalEnvironment = new Environment();
     configScope(globalEnvironment);
-
-    let out = evaluate(ast, globalEnvironment);
-    output.value += `\n>${out.value}`;
-    console.log(out)
+    evaluate(ast, globalEnvironment);
 
   } catch(e){
     output.value += `\n>[ERROR] ${e}`;
     console.log(e);
   }
 }
+
+export function writeln(str){
+  output.value += `\n>${format(str)}`;
+  console.log({str});
+  console.log(format(str));
+}
+
+function format(str){
+  const result = JSON.stringify(str,null,2);
+  return result.replace(/"/g, '');
+}
+
 
 codeArea.addEventListener('keydown', function(e) {
   if (e.key == 'Tab'){

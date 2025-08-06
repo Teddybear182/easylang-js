@@ -1,4 +1,5 @@
 import { makeNull, makeNumber, makeString, makeIdentifier } from "./utils.js";
+import { Environment } from "./env.js";
 
 export function evaluate(statement, env){
   if(statement.type == 'number'){
@@ -16,6 +17,9 @@ export function evaluate(statement, env){
   else if(statement.type == 'varDec'){
     return evaluateVarDeclaration(statement, env);
   }
+  else if(statement.type == 'functionDec'){
+    return evaluateFunDec(statement, env);
+  }
   else if(statement.type == 'BinaryExpr'){
     return evaluateBinEx(statement, env);
   }
@@ -31,8 +35,17 @@ export function evaluate(statement, env){
   else if(statement.type == 'ObjectExpr'){
     return evaluateObjectExpr(statement, env);
   }
+  else if(statement.type == 'MemberExpr'){
+    return evaluateMemberExpr(statement, env);
+  }
+  else if(statement.type == 'CallExpr'){
+    return evaluateCallExpr(statement, env);
+  }
   else if(statement.type == 'Program'){
     return evaluateProgram(statement, env);
+  }
+  else if(statement.type == 'ifCondition'){
+    return evaluateIf(statement, env);
   }
   else{
     throw new Error('Unrecognized statement: ' + JSON.stringify(statement));
@@ -47,11 +60,45 @@ function evaluateProgram(program, env){
   return evaluated;
 }
 
+
 function evaluateVarDeclaration(varDec, env){
   let value;
   value = evaluate(varDec.initVal, env);
   let name = varDec.varName;
   return env.declare(name, value, varDec.isConstant);
+}
+
+function evaluateFunDec(func, env){
+  const name = func.funcName;
+  const params = func.parameters;
+  const body = func.body;
+
+  const result = {
+    type: "function",
+    name,
+    parameters: params,
+    env,
+    body,
+  };
+
+  return env.declare(name, result, true);
+}
+
+function evaluateIf(statement, env){
+  let condition = evaluate(statement.condition, env).value;
+  let result = [];
+  if(condition!=null&&condition!=0&&condition!='null'){
+    console.log(condition);
+    for(const x of statement.body){
+      result.push(evaluate(x,env));
+    }
+  }
+  else{
+    for(const x of statement.elseBody){
+      result.push(evaluate(x,env));
+    }
+  }
+  return result;
 }
 
 function evaluateAssignment(assignment, env){
@@ -79,8 +126,73 @@ function evaluateObjectExpr(object, env){
   return obj;
 }
 
+function evaluateMemberExpr(member, env){
+  let obj = evaluate(member.object, env);
+  if(obj.type=='function'){
+    let property = member.prop.value
+    return obj.env.getValue(property);
+  }
+
+  obj = obj.properties;
+
+  let property;
+  if(member.computed){
+    property = evaluate(member.prop, env).value;
+  } 
+  else{
+    property = member.prop.value;
+  }
+
+  let result;
+  if(Array.isArray(obj)){
+    if(member.computed=false){
+      throw new Error(`Cannot access value of array through not computed member expression`)
+    }
+    if(property<0||property>obj.length){
+      throw new Error(`Expected valid index number instead of ${property}`)
+    }
+    result = obj.at(property);
+  }
+  else{
+    result = obj.get(property);
+  }
+
+  return result;
+}
+
+function evaluateCallExpr(callExpr, env){
+  let args = callExpr.args.map((arg) => evaluate(arg, env));
+  let func = evaluate(callExpr.caller, env);
+
+  if(func.type != 'function' && func.type != 'nativeFunction'){
+    throw new Error(`Expected function type instead of ${func.type} in call expression!`);
+  }
+
+  if(func.type == 'nativeFunction'){
+    return func.call(args, env);
+  }
+
+  if(args.length<func.parameters.length || args.length>func.parameters.length){
+    throw new Error(`The amount of args in call and in fucntion declaration must be the same`);
+  }
+
+  const scope = new Environment(func.env);
+  for(let i = 0; i<func.parameters.length; i++){
+    const varName = func.parameters[i];
+    scope.declare(varName, args[i], false);
+  }
+
+  let result = {type: 'function', body: [], env: scope};
+  console.log(func.body);
+  for(const statement of func.body){
+    result.body.push(evaluate(statement, scope));
+  }
+  return result;
+}
+
 function evaluateArrayExpr(array, env){
   const properties = [];
+
   let arr = {type: 'array', properties};
 
   for(let element of array.properties){
@@ -111,6 +223,14 @@ const BinaryOperations = {
   "*": (a,b) => a*b,
   "/": (a,b) => a/b,
   "%": (a,b) => a%b,
+  "<": (a,b) => Number(a<b),
+  "<=": (a,b) => Number(a<=b),
+  ">": (a,b) => Number(a>b),
+  ">=": (a,b) => Number(a>=b),
+  "and": (a,b) => Number(a&&b),
+  "or": (a,b) => Number(a||b),
+  "!=": (a,b) => Number(a!=b),
+  "==": (a,b) => Number(a==b),
 };
 
 function evaluateBinEx(BinOp, env){

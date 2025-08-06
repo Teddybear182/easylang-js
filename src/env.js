@@ -1,4 +1,5 @@
 import { makeNull, makeNumber } from "./utils.js";
+import { writeln } from "./index.js";
 
 export class Environment{
   parent;
@@ -41,7 +42,6 @@ export class Environment{
   }
 
   locateVariable(varName){
-    console.log(this.variables);
     if (this.variables.has(varName)){
       return this;
     }
@@ -59,6 +59,7 @@ export class Environment{
 }
 
 export function configScope(scope){
-  scope.declare("Pi", makeNumber(Math.PI));
-  scope.declare("null", makeNull());
+  scope.declare("Pi", makeNumber(Math.PI), true);
+  scope.declare("null", makeNull(), true);
+  scope.declare("write", {type: 'nativeFunction', call: (args, env)=>{console.log(...args); writeln(...args)}}, true);
 }

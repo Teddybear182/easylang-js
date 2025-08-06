@@ -1,0 +1,11 @@
+task main(){
+  task add(a,b){
+    write(a+b)
+  }
+  task substract(a,b){
+    write(a-b)
+  }
+}
+const fun = main();
+fun.add(4,7)
+fun.substract(4,7)

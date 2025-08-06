@@ -1,9 +1,9 @@
 const Keywords = [
-  'var', 'const', 'if', 'else', 'while', 'for', 'task', 'return', 'true', 'false'
+  'var', 'const', 'if', 'else', 'loop', 'for', 'task', 'return', 'true', 'false'
 ];
 
 const Operators = [
-  '\\+', '\\-', '/', '\\*', '%', '=', '>=', '<=', '!=', '\\|\\|', '&&'
+  '\\+', '\\-', '/', '\\*', '%', '==', '>=', '<=', '<', '>', '!=', '=', 'or', 'and'
 ];
 
 const regex = {

@@ -1,0 +1,8 @@
+const obj = {
+  a: 10,
+  b:5,
+  c:"fooBar",
+  d:{x:5}
+};
+
+write(obj.d.x)

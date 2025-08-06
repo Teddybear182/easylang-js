@@ -56,6 +56,8 @@ export class Parser{
         return this.parseVarDec();
       case 'task':
         return this.parseFunction();
+      case 'if':
+        return this.parseIf();
     }
     return this.parseExpression();
   }
@@ -76,6 +78,38 @@ export class Parser{
 
     this.expect('punctuation', ';', 'Expected semicolon after initializing variable');
     return {type: 'varDec', varName, initVal, isConstant};
+  }
+
+  parseIf(){
+    this.next();
+    let body = [];
+    let condition;
+    let elseBody = [];
+
+    this.expect('parens','(',`Expected condition after the keyword 'if'`);
+    condition = this.parseExpression();
+    this.expect('parens',')',`Expected closed paren after condition`);
+
+    this.expect('punctuation','{',`Expected body after condition`);
+    while(this.checkType()!='EOF' && this.checkValue()!='}'){
+      body.push(this.parseStatement());
+    }
+    this.expect('punctuation','}',`Expected closed brace after body`);
+
+    if(this.checkValue()=='else'){
+      this.next();
+      this.expect('punctuation','{',`Expected body after else`);
+      while(this.checkType()!='EOF' && this.checkValue()!='}'){
+        elseBody.push(this.parseStatement());
+      }
+      this.expect('punctuation','}',`Expected closed brace after body`);
+    }
+    return {
+      type: 'ifCondition',
+      condition,
+      body,
+      elseBody
+    }
   }
 
   parseFunction(){
@@ -104,7 +138,7 @@ export class Parser{
     this.expect('punctuation', '}', 'Expected closing brace after function body');
 
     const func = {
-      type: 'FunctionDec',
+      type: 'functionDec',
       funcName,
       parameters: params,
       body
@@ -181,7 +215,7 @@ export class Parser{
   //{a:10, b:5}
   parseObjectExpr(){
     if(this.checkValue() != '{'){
-      return this.parseAddExpr();
+      return this.parseOrExpr();
     }
     this.next();
     const properties = [];
@@ -213,23 +247,82 @@ export class Parser{
     return {type: 'ObjectExpr', properties};
   }
 
-  parseAddExpr(){
-    let left = this.parseMultExpr();
-    while(this.checkValue() == '+' || this.checkValue() == '-'){
-      const operator = this.next().value;
-      const right = this.parseMultExpr();
-      left = {type: 'BinaryExpr', left, right, operator };
+  parseOrExpr(){
+    return (
+      this.parseBinaryExprWith(['or'], () =>
+      this.parseBinaryExprWith(['and'], () =>
+      this.parseBinaryExprWith(['!=', '=='], () =>
+      this.parseBinaryExprWith(['<', '>', '<=', '>='], () =>
+      this.parseBinaryExprWith(['+', '-'], () =>
+      this.parseBinaryExprWith(['*', '/', '%'], () =>
+      this.parseCallExpr()))))))
+    );
+  }
+  
+  //object["a"]()
+  parseCallExpr(){
+    let caller = this.parseMemberExpr();
+
+    if(this.checkValue()!='('){
+      return caller;
     }
-    return left;
+
+    let callExpr = caller;
+    while(this.checkValue()=='('){
+      callExpr = {
+        type: 'CallExpr',
+        caller: callExpr,
+        args: this.parseArgs()
+      }
+    }
+
+    return callExpr;
   }
 
-  /*  5+2*4 --> [5, [ 2, 4, *], +] --- something like that */
-  parseMultExpr(){
-    let left = this.parsePrimExpr();
-    while(this.checkValue() == '*' || this.checkValue() == '/' || this.checkValue() == '%'){
-      const operator = this.next().value;
-      const right = this.parsePrimExpr();
-      left = {type: 'BinaryExpr', left, right, operator };
+  parseMemberExpr(){
+    let obj = this.parsePrimExpr();
+
+    while(this.checkValue()=='[' || this.checkValue()=='.'){
+      const operator = this.next();
+      let prop;
+      let computed;
+
+      if(operator.value=='.'){
+        computed = false;
+        prop = this.parsePrimExpr();
+        if(prop.type != 'identifier'){
+          throw new Error(`Expected identifier type at member expression instead of "${prop.type}"`);
+        }
+      }
+      else if(operator.value=='['){
+        computed = true;
+        prop = this.parseExpression();
+        this.expect('punctuation', ']', 'Missing closed bracket after defining computed property')
+      }
+
+      obj = {
+        type: 'MemberExpr',
+        object: obj,
+        prop,
+        computed
+      }
+    }
+
+    return obj
+  }
+
+  parseBinaryExprWith(operators, nextfunc){
+    let left = nextfunc();
+    let operator;
+    while(operators.includes(operator = this.checkValue())){
+      this.next();
+      let right = nextfunc();
+      left = {
+        type: 'BinaryExpr',
+        left,
+        right,
+        operator
+      };
     }
     return left;
   }
