@@ -1,0 +1,11 @@
+var x = "hello world"
+
+write(string.matches(x, "(hello)"))
+
+x = string.replace(x, " ", "/") 
+write(x)
+
+write(string.len(x))
+
+var y = string.split(x, "/")
+write(y)

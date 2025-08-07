@@ -1,0 +1,2 @@
+var x = input("Type in your input: ")
+write(x)

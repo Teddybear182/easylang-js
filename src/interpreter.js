@@ -47,6 +47,12 @@ export function evaluate(statement, env){
   else if(statement.type == 'ifCondition'){
     return evaluateIf(statement, env);
   }
+  else if(statement.type == 'Loop'){
+    return evaluateLoop(statement, env);
+  }
+  else if(statement.type == 'WhileLoop'){
+    return evaluateWhileLoop(statement, env);
+  }
   else{
     throw new Error('Unrecognized statement: ' + JSON.stringify(statement));
   }
@@ -84,22 +90,57 @@ function evaluateFunDec(func, env){
   return env.declare(name, result, true);
 }
 
-function evaluateIf(statement, env){
-  let condition = evaluate(statement.condition, env).value;
+function evaluateLoop(loop, env){
+  const amount = evaluate(loop.amount, env).value;
+  const varName = loop.variable.value;
   let result = [];
-  if(condition!=null&&condition!=0&&condition!='null'){
-    console.log(condition);
-    for(const x of statement.body){
-      result.push(evaluate(x,env));
-    }
-  }
-  else{
-    for(const x of statement.elseBody){
-      result.push(evaluate(x,env));
+  
+  for(let j=0; j<amount; j++){
+    let scope = new Environment(env);
+    scope.declare(varName, j, false);
+    for(const statement of loop.body){
+      result.push(evaluate(statement,scope));
     }
   }
   return result;
 }
+
+
+function evaluateWhileLoop(loop, env){
+  let condition = evaluate(loop.condition, env);
+  let result = [];
+
+  while(condition!=null&&condition!=0&&condition!='null'){
+    let scope = new Environment(env);
+    for(const statement of loop.body){
+      result.push(evaluate(statement,scope));
+      condition = evaluate(loop.condition, env).value;
+    }
+  }
+  return result;
+}
+
+
+function evaluateIf(statement, env){
+  let condition = evaluate(statement.condition, env).value;
+  let result = [];
+  const scope = new Environment(env);
+  console.log("CONDITION: ",condition);
+  if(condition!=null && condition!=0 && condition!='null'){
+    for(const x of statement.body){
+      condition = evaluate(statement.condition, env).value;
+      console.log("CONDITION: ",condition);
+      result.push(evaluate(x,scope));
+    }
+  }
+  else{
+    for(const x of statement.elseBody){
+      result.push(evaluate(x,scope));
+    }
+  }
+  return result;
+}
+
 
 function evaluateAssignment(assignment, env){
   let varName = assignment.left;
@@ -128,13 +169,12 @@ function evaluateObjectExpr(object, env){
 
 function evaluateMemberExpr(member, env){
   let obj = evaluate(member.object, env);
+
   if(obj.type=='function'){
-    let property = member.prop.value
-    return obj.env.getValue(property);
+    return obj.env.getValue(member.prop.value)
   }
 
-  obj = obj.properties;
-
+  let properties = obj.properties;
   let property;
   if(member.computed){
     property = evaluate(member.prop, env).value;
@@ -144,17 +184,17 @@ function evaluateMemberExpr(member, env){
   }
 
   let result;
-  if(Array.isArray(obj)){
-    if(member.computed=false){
+  if(Array.isArray(properties)){
+    if(member.computed==false){
       throw new Error(`Cannot access value of array through not computed member expression`)
     }
-    if(property<0||property>obj.length){
+    if(property<0||property>properties.length){
       throw new Error(`Expected valid index number instead of ${property}`)
     }
-    result = obj.at(property);
+    result = properties.at(property);
   }
   else{
-    result = obj.get(property);
+    result = properties.get(property);
   }
 
   return result;
@@ -163,7 +203,6 @@ function evaluateMemberExpr(member, env){
 function evaluateCallExpr(callExpr, env){
   let args = callExpr.args.map((arg) => evaluate(arg, env));
   let func = evaluate(callExpr.caller, env);
-
   if(func.type != 'function' && func.type != 'nativeFunction'){
     throw new Error(`Expected function type instead of ${func.type} in call expression!`);
   }
@@ -182,10 +221,11 @@ function evaluateCallExpr(callExpr, env){
     scope.declare(varName, args[i], false);
   }
 
-  let result = {type: 'function', body: [], env: scope};
-  console.log(func.body);
+  const properties = [];
+  let result = {type: 'function', properties, env:scope};
   for(const statement of func.body){
-    result.body.push(evaluate(statement, scope));
+    const prop = evaluate(statement, scope);
+    properties.push(prop);
   }
   return result;
 }
@@ -203,7 +243,7 @@ function evaluateArrayExpr(array, env){
 }
 
 function evaluateIdentifier(id, env){
-  const value = env.getValue(String(id.value));
+  const value = env.getValue(id.value);
   return value;
 }
 
@@ -236,6 +276,7 @@ const BinaryOperations = {
 function evaluateBinEx(BinOp, env){
   let lhs = evaluate(BinOp.left, env);
   let rhs = evaluate(BinOp.right, env);
+  console.log("LHS: ", lhs, "RHS: ", rhs);
   if (lhs.type == 'number' && rhs.type == 'number'){
     return evaluateNumBinEx(lhs, rhs, BinOp.operator);
   }
@@ -246,6 +287,7 @@ function evaluateNumBinEx(lhs, rhs, operator){
   let left = parseFloat(lhs.value);
   let right = parseFloat(rhs.value);
   let result = 0;
+  console.log("LHS: ", lhs, "RHS: ", rhs);
   if (BinaryOperations[operator] != undefined){
     result = BinaryOperations[operator](left, right);
   }

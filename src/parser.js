@@ -58,6 +58,10 @@ export class Parser{
         return this.parseFunction();
       case 'if':
         return this.parseIf();
+      case 'loop':
+        return this.parseLoop();
+      case 'while':
+        return this.parseWhile();
     }
     return this.parseExpression();
   }
@@ -76,7 +80,6 @@ export class Parser{
       initVal = this.parseExpression();
     }
 
-    this.expect('punctuation', ';', 'Expected semicolon after initializing variable');
     return {type: 'varDec', varName, initVal, isConstant};
   }
 
@@ -109,6 +112,53 @@ export class Parser{
       condition,
       body,
       elseBody
+    }
+  }
+
+  // loop(i : 17)
+  parseLoop(){
+    this.next();
+    this.expect('parens', '(', 'Expecting opened parenthesis after loop keyword');
+    const variable = this.parsePrimExpr();
+    if(variable.type!='identifier'){
+      throw new Error(`Expected variable in loop to be identifier`);
+    }
+    this.expect('punctuation', ':', `Expected ":" value in the loop`);
+    const amount = this.parseExpression();
+    this.expect('parens', ')', 'Expecting closed parenthesis after loop condition');
+
+    const body = [];
+    this.expect('punctuation','{',`Expected body after loop condition`);
+    while(this.checkType()!='EOF' && this.checkValue()!='}'){
+      body.push(this.parseStatement());
+    }
+    this.expect('punctuation','}',`Expected closed brace after body`);
+
+    return {
+      type: 'Loop',
+      variable,
+      body,
+      amount
+    }
+  }
+
+  parseWhile(){
+    this.next();
+    this.expect('parens', '(', 'Expecting opened parenthesis after loop keyword');
+    const condition = this.parseExpression();
+    this.expect('parens', ')', 'Expecting closed parenthesis after loop condition');
+
+    const body = [];
+    this.expect('punctuation','{',`Expected body after loop condition`);
+    while(this.checkType()!='EOF' && this.checkValue()!='}'){
+      body.push(this.parseStatement());
+    }
+    this.expect('punctuation','}',`Expected closed brace after body`);
+
+    return {
+      type: 'WhileLoop',
+      condition,
+      body,
     }
   }
 
@@ -255,19 +305,30 @@ export class Parser{
       this.parseBinaryExprWith(['<', '>', '<=', '>='], () =>
       this.parseBinaryExprWith(['+', '-'], () =>
       this.parseBinaryExprWith(['*', '/', '%'], () =>
-      this.parseCallExpr()))))))
+      this.parseCallMemberExpr()))))))
     );
   }
   
-  //object["a"]()
-  parseCallExpr(){
-    let caller = this.parseMemberExpr();
+  parseCallMemberExpr(){
+    let member = this.parseMemberExpr();
 
-    if(this.checkValue()!='('){
-      return caller;
+    while(this.checkValue()=='('){
+      member = this.parseCallExpr(member);
     }
 
-    let callExpr = caller;
+    return member;
+  }
+
+
+  //object["a"]()
+  parseCallExpr(caller){
+
+    let callExpr = {
+      type: 'CallExpr',
+      caller,
+      args: this.parseArgs()
+    };
+
     while(this.checkValue()=='('){
       callExpr = {
         type: 'CallExpr',
@@ -275,6 +336,7 @@ export class Parser{
         args: this.parseArgs()
       }
     }
+
 
     return callExpr;
   }

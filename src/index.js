@@ -1,7 +1,7 @@
 import { evaluate } from "./interpreter.js";
 import { Environment } from "./env.js";
 import { Parser } from "./parser.js";
-import { configScope } from "./env.js";
+import { configureScope } from "./env.js";
 
 
 let codeArea = document.getElementById("codeArea");
@@ -14,14 +14,14 @@ let fileInput = document.getElementById("fileInput");
 
 runButton.addEventListener('click', runCode);
 
-output.value = 'EasyLang v1.4';
+output.value = 'EasyLang v2.3';
 
 function runCode(){
   try{
     let code = codeArea.value;
     let ast = new Parser().generateAST(code);
     let globalEnvironment = new Environment();
-    configScope(globalEnvironment);
+    configureScope(globalEnvironment);
     evaluate(ast, globalEnvironment);
 
   } catch(e){

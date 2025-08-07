@@ -1,5 +1,5 @@
 const Keywords = [
-  'var', 'const', 'if', 'else', 'loop', 'for', 'task', 'return', 'true', 'false'
+  'var', 'const', 'if', 'else', 'loop', 'while', 'task', 'return'
 ];
 
 const Operators = [
@@ -16,6 +16,7 @@ const regex = {
   keywords: new RegExp(`^(${Keywords.join('|')})`),
   punctuation: /^[{}[\];:,.]/,
 
+  comments: /^\/([^/]*)/,
   space: /^( )/,
   multispaces: /[\s\t]{2,}/,
   nextline: /\n+/,
@@ -30,6 +31,7 @@ export class Lexer{
       let match;
       code = code.replace(regex.multispaces, ' ');
       code = code.replace(regex.nextline, ' ');
+      code = code.replace(regex.comments, ' ');
       if (match = code.match(regex.number)){
         tokens.push({type: 'number', value: parseFloat(match[0])});
       }

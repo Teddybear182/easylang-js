@@ -1,11 +1,18 @@
 task main(){
+  write("main function is working")
   task add(a,b){
     write(a+b)
   }
   task substract(a,b){
     write(a-b)
   }
+  task fooBar(a){
+    loop(i:a){
+      write(i)
+    }
+  }
 }
-const fun = main();
+const fun = main()
 fun.add(4,7)
 fun.substract(4,7)
+fun.fooBar(15)

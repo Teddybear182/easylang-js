@@ -1,0 +1,22 @@
+task guessNumber(){
+  const guessedNumber = math.random(0,10)
+  var game = true
+
+  while(game==true){
+    var answer = int(input("take a guess!"))
+
+    if(answer==guessedNumber){
+      write("Wow, you actually guessed it!")
+      game = false
+    }
+    if(answer<guessedNumber){
+      write("Your answer is lesser than guessed number")
+    }
+    if(answer>guessedNumber){
+      write("Your answer is bigger than guessed number")
+    }
+  }
+}
+
+
+guessNumber()

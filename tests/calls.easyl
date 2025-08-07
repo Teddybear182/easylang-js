@@ -3,6 +3,6 @@ const obj = {
   b:5,
   c:"fooBar",
   d:{x:5}
-};
+}
 
 write(obj.d.x)

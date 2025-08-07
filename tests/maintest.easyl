@@ -1,13 +1,17 @@
 task main(){
-  const x = 6;
   task addNumbers(a,b){
     write(a+b)
   }
   task substractNumbers(a,b){
     write(a-b)
   }
+  var x = 5
+  var y = [5,6,7,2]
+  addNumbers(x, y[1])
+
+  x = 74
+  substractNumbers(x, y[3])
 }
 
-const Main = main();
+main()
 
-Main.substractNumbers(5,8)

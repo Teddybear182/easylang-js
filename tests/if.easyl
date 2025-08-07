@@ -1,11 +1,11 @@
-var x = 5;
+var x = 5
 if(x<4){
-  write("x is lesser than 4")
+  write("x is less than 4")
 }
 else{
   write("apparently not")
 }
 
 if(x>4){
-  write("x is more than 4")
+  write("x is bigger than 4")
 }

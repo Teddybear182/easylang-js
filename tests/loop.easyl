@@ -1,0 +1,10 @@
+loop(i:15){
+  write(i)
+}
+
+var i = 0
+write("while loop")
+while(i<15){
+  write(i)
+  i=i+1
+}
